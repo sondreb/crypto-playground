@@ -281,7 +281,7 @@ describe('crypto', () => {
           id: 'did:is:82a0a538928bc72b1976c3409597b063074c4921f448fe94ea8e85e0e7a6c6c7',
           verificationMethod: [
             {
-              id: '#keys-1',
+              id: 'did:is:82a0a538928bc72b1976c3409597b063074c4921f448fe94ea8e85e0e7a6c6c7#keys-1',
               // type: 'JsonWebKey2020',
               type: 'EcdsaSecp256k1VerificationKey2019',
               controller: 'did:is:82a0a538928bc72b1976c3409597b063074c4921f448fe94ea8e85e0e7a6c6c7',
@@ -293,6 +293,8 @@ describe('crypto', () => {
               },
             },
           ],
+          authentication: ['did:is:82a0a538928bc72b1976c3409597b063074c4921f448fe94ea8e85e0e7a6c6c7#keys-1'],
+          assertionMethod: ['did:is:82a0a538928bc72b1976c3409597b063074c4921f448fe94ea8e85e0e7a6c6c7#keys-1']
         },
         // didDocument: {
         //   '@context': 'https://w3id.org/did/v1',
