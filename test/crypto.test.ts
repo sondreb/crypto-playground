@@ -4,6 +4,8 @@ import { HDKey } from '@scure/bip32';
 import { mnemonicToSeedSync } from '@scure/bip39';
 import { base64, base64url } from '@scure/base';
 
+import { createJWT, verifyJWT, ES256KSigner, hexToBytes } from 'did-jwt';
+
 describe('crypto', () => {
   it('Combine BIP32 with BIP340', async () => {
     // BIP0340: https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki#public-key-conversion
@@ -119,7 +121,6 @@ describe('crypto', () => {
 
     const pubHex = secp.utils.bytesToHex(pubSchnorr);
 
-
     const pub = secp.Point.fromHex(pubHex);
     const xHex = pub.x.toString(16);
     const bytesOfX = secp.utils.hexToBytes(xHex);
@@ -199,5 +200,117 @@ describe('crypto', () => {
       ),
       true
     );
+
+    // Verify JWT:
+    const signer = ES256KSigner(addressNode1.privateKey!);
+    // const signer = ES256KSigner(
+    //   hexToBytes(
+    //     '278a5de700e29faae8e40e366ec5012b5ec63d36ec77e8a2417154cc1d25383f'
+    //   )
+    // );
+
+    const publicKey111 = secp.getPublicKey(addressNode1.privateKey!, false);
+    console.log(secp.utils.bytesToHex(publicKey111));
+
+    const publicKey222 = secp.schnorr.getPublicKey(addressNode1.privateKey!);
+    console.log(secp.utils.bytesToHex(publicKey222));
+
+    let jwt = await createJWT(
+      {
+        aud: 'did:is:82a0a538928bc72b1976c3409597b063074c4921f448fe94ea8e85e0e7a6c6c7',
+        exp: 1957463421,
+        name: 'Blockcore Developer',
+      },
+      {
+        issuer:
+          'did:is:82a0a538928bc72b1976c3409597b063074c4921f448fe94ea8e85e0e7a6c6c7',
+        signer,
+      },
+      { alg: 'ES256K' }
+    );
+
+    const getJsonWebKey = (privateKey: Uint8Array) => {
+      // const pub = secp.Point.fromPrivateKey(privateKey);
+      const hex = secp.getPublicKey(privateKey, true);
+      const pub = secp.Point.fromHex(hex);
+      // const pub = secp.getPublicKey(privateKey, false);
+      const x = secp.utils.hexToBytes(pub.x.toString(16));
+      const y = secp.utils.hexToBytes(pub.y.toString(16));
+
+      return {
+        kty: 'EC',
+        crv: 'secp256k1',
+        x: base64url.encode(x), // This version of base64url uses padding.
+        y: base64url.encode(y), // Without padding: Buffer.from(bytesOfX).toString('base64url')
+        // x: Buffer.from(x).toString('base64url'), // This version of base64url uses padding.
+        // y: Buffer.from(y).toString('base64url'), // Without padding: Buffer.from(bytesOfX).toString('base64url')
+      };
+
+      // const pub = secp.Point.fromHex(publicKey); // fromHex also does from Uint8Array.
+      // const x = pub.x.toString(16).padStart(64, '0');
+      // const y = pub.y.toString(16).padStart(64, '0');
+
+      // secp.utils.bytesToHex();
+
+      // const [x, y] = [pub.x, pub.y].map((n) => n.toString());
+
+      // return {
+      //   kty: 'EC',
+      //   crv: 'secp256k1',
+      //   x: base64url.encode(x.toString(16)),
+      //   y: base64url.encode(y.toString(16)),
+      // };
+    };
+
+    console.log('KEY');
+    console.log(getJsonWebKey(addressNode1.privateKey!));
+    // console.log(
+    //   getJsonWebKey(
+    //     hexToBytes(
+    //       '278a5de700e29faae8e40e366ec5012b5ec63d36ec77e8a2417154cc1d25383f'
+    //     )
+    //   )
+    // );
+
+    console.log(jwt);
+    const resolver = {
+      resolve: async () => ({
+        didResolutionMetadata: {},
+        didDocumentMetadata: {},
+        didDocument: {
+          id: 'did:is:82a0a538928bc72b1976c3409597b063074c4921f448fe94ea8e85e0e7a6c6c7',
+          verificationMethod: [
+            {
+              id: '#keys-1',
+              // type: 'JsonWebKey2020',
+              type: 'EcdsaSecp256k1VerificationKey2019',
+              controller: 'did:is:82a0a538928bc72b1976c3409597b063074c4921f448fe94ea8e85e0e7a6c6c7',
+              publicKeyJwk: {
+                kty: 'EC',
+                crv: 'secp256k1',
+                x: 'gqClOJKLxysZdsNAlZewYwdMSSH0SP6U6o6F4Oemxsc=',
+                y: 'Nx4Wc9DyLSfCxJKjT52AwNanY9WGXAne_iBWr9u38uw=',
+              },
+            },
+          ],
+        },
+        // didDocument: {
+        //   '@context': 'https://w3id.org/did/v1',
+        //   id: 'did:key:z6MkoTHsgNNrby8JzCNQ1iRLyW5QQ6R8Xuu6AA8igGrMVPUM',
+        //   publicKey: [
+        //     {
+        //       id: 'did:key:z6MkoTHsgNNrby8JzCNQ1iRLyW5QQ6R8Xuu6AA8igGrMVPUM#z6MkoTHsgNNrby8JzCNQ1iRLyW5QQ6R8Xuu6AA8igGrMVPUM',
+        //       type: 'Ed25519VerificationKey2018',
+        //       controller: 'did:key:z6MkoTHsgNNrby8JzCNQ1iRLyW5QQ6R8Xuu6AA8igGrMVPUM',
+        //       publicKeyBase58: 'A12q688RGRdqshXhL9TW8QXQaX9H82ejU9DnqztLaAgy',
+        //     },
+        //   ],
+        // },
+      }),
+    };
+
+    const { payload } = await verifyJWT(jwt, { resolver, audience: 'did:is:82a0a538928bc72b1976c3409597b063074c4921f448fe94ea8e85e0e7a6c6c7' });
+    
+    console.log('Payload:', payload);
   });
 });
