@@ -2,6 +2,7 @@ import assert from 'assert';
 import * as secp from '@noble/secp256k1';
 import { HDKey } from '@scure/bip32';
 import { mnemonicToSeedSync } from '@scure/bip39';
+import { base64, base64url } from '@scure/base';
 
 describe('crypto', () => {
   it('Combine BIP32 with BIP340', async () => {
@@ -115,6 +116,49 @@ describe('crypto', () => {
 
     assert.equal(pubEcdsa.length, 33);
     assert.equal(pubSchnorr.length, 32);
+
+    const pubHex = secp.utils.bytesToHex(pubSchnorr);
+
+
+    const pub = secp.Point.fromHex(pubHex);
+    const xHex = pub.x.toString(16);
+    const bytesOfX = secp.utils.hexToBytes(xHex);
+
+    console.log('Base64 encodings:');
+    console.log(Buffer.from(bytesOfX).toString('base64'));
+    console.log(Buffer.from(bytesOfX).toString('base64url'));
+    console.log(base64.encode(bytesOfX));
+    console.log(base64url.encode(bytesOfX));
+
+    // console.log(base64.encode(array));
+    // console.log(base64.encode(buffer));
+
+    // console.log(pub.x);
+    // console.log(pub.y);
+
+    // // Buffer.from(pub.x, 'base64');
+    // // Buffer.from(rawData, 'base64');
+    // // buffer.toString('hex');
+    // const buffer = Buffer.from(pub.x.toString(16));
+    // console.log(buffer.length);
+
+    // // base64.encode(pub.x.toString(16));
+    // // Uint8Array.from(pub.x.toString(16));
+
+    // console.log(pub.x.toString(16));
+    // console.log(pub.y.toString(16));
+
+    // console.log(base64url.encode(buffer));
+
+    // const [x, y] = [pub.x, pub.y].map((n) => pad(n));
+
+    // console.log(x.length);
+
+    // const jwk = {
+    //   hex: pub.toHex(true), x, y
+    // };
+
+    // console.log('JWK: ', JSON.stringify(jwk));
 
     // Restore from xpub:
     const accountNodePub = HDKey.fromExtendedKey(xpub, network);

@@ -28,7 +28,9 @@
   },
   "dependencies": {
     "@noble/secp256k1": "^1.6.0",
+    "@scure/base": "^1.1.1",
     "@scure/bip32": "^1.1.0",
-    "@scure/bip39": "^1.1.0"
+    "@scure/bip39": "^1.1.0",
+    "@transmute/lds-ss256k": "^0.0.4"
   }
 }
